@@ -1,6 +1,6 @@
 {
   "name": "spatie/laravel-permission",
-  "description": "Permission handling for Laravel 5.1 and up",
+  "description": "Permission handling for Laravel 5.1",
   "keywords": [
     "spatie",
     "laravel",
@@ -39,15 +39,5 @@
   },
   "scripts": {
     "test": "phpunit"
-  },
-  "config": {
-    "sort-packages": true
-  },
-  "extra": {
-    "laravel": {
-      "providers": [
-        "Spatie\\Permission\\PermissionServiceProvider"
-      ]
-    }
   }
 }

@@ -47,7 +47,7 @@ trait HasRoles
     public function scopeRole($query, $roles)
     {
         if ($roles instanceof Collection) {
-            $roles = $roles->all();
+            $roles = $roles->toArray();
         }
 
         if (! is_array($roles)) {
@@ -65,7 +65,7 @@ trait HasRoles
         return $query->whereHas('roles', function ($query) use ($roles) {
             $query->where(function ($query) use ($roles) {
                 foreach ($roles as $role) {
-                    $query->orWhere(config('laravel-permission.table_names.roles').'.id', $role->id);
+                    $query->orWhere('id', $role->id);
                 }
             });
         });
@@ -201,28 +201,6 @@ trait HasRoles
     }
 
     /**
-     * Determine if the user has any of the given permissions.
-     *
-     * @param array ...$permissions
-     *
-     * @return bool
-     */
-    public function hasAnyPermission(...$permissions)
-    {
-        if (is_array($permissions[0])) {
-            $permissions = $permissions[0];
-        }
-
-        foreach ($permissions as $permission) {
-            if ($this->hasPermissionTo($permission)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * @deprecated deprecated since version 1.0.1, use hasPermissionTo instead
      *
      * Determine if the user may perform the given permission.
@@ -255,7 +233,7 @@ trait HasRoles
      *
      * @return bool
      */
-    public function hasDirectPermission($permission)
+    protected function hasDirectPermission($permission)
     {
         if (is_string($permission)) {
             $permission = app(Permission::class)->findByName($permission);
@@ -280,38 +258,5 @@ trait HasRoles
         }
 
         return $role;
-    }
-
-    /**
-     * Return all  permissions the directory coupled to the user.
-     *
-     * @return \Illuminate\Support\Collection
-     */
-    public function getDirectPermissions()
-    {
-        return $this->permissions;
-    }
-
-    /**
-     * Return all the permissions the user has via roles.
-     *
-     * @return \Illuminate\Support\Collection
-     */
-    public function getPermissionsViaRoles()
-    {
-        return $this->load('roles', 'roles.permissions')
-            ->roles->flatMap(function ($role) {
-                return $role->permissions;
-            })->sort()->values();
-    }
-
-    /**
-     * Return all the permissions the user has, both directly and via roles.
-     *
-     * @return \Illuminate\Support\Collection
-     */
-    public function getAllPermissions()
-    {
-        return $this->permissions->merge($this->getPermissionsViaRoles())->sort()->values();
     }
 }

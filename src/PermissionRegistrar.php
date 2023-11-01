@@ -2,25 +2,31 @@
 
 namespace Spatie\Permission;
 
+use Log;
+use Exception;
 use Illuminate\Contracts\Auth\Access\Gate;
 use Illuminate\Contracts\Cache\Repository;
 use Spatie\Permission\Contracts\Permission;
-use Illuminate\Contracts\Auth\Access\Authorizable;
-use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 
 class PermissionRegistrar
 {
-    /** @var \Illuminate\Contracts\Auth\Access\Gate */
+    /**
+     * @var Gate
+     */
     protected $gate;
 
-    /** @var \Illuminate\Contracts\Cache\Repository */
+    /**
+     * @var Repository
+     */
     protected $cache;
 
-    /** @var string */
+    /**
+     * @var string
+     */
     protected $cacheKey = 'spatie.permission.cache';
 
     /**
-     * @param Gate $gate
+     * @param Gate       $gate
      * @param Repository $cache
      */
     public function __construct(Gate $gate, Repository $cache)
@@ -32,21 +38,25 @@ class PermissionRegistrar
     /**
      *  Register the permissions.
      *
-     * @var string
      * @return bool
      */
     public function registerPermissions()
     {
-        $this->gate->before(function (Authorizable $user, $ability) {
-            try {
-                if (method_exists($user, 'hasPermissionTo')) {
-                    return $user->hasPermissionTo($ability) ?: null;
-                }
-            } catch (PermissionDoesNotExist $e) {
-            }
-        });
+        try {
+            $this->getPermissions()->map(function ($permission) {
+                $this->gate->define($permission->name, function ($user) use ($permission) {
+                    return $user->hasPermissionTo($permission);
+                });
+            });
 
-        return true;
+            return true;
+        } catch (Exception $exception) {
+            Log::alert(
+                "Could not register permissions because {$exception->getMessage()}" . PHP_EOL
+                . $exception->getTraceAsString());
+
+            return false;
+        }
     }
 
     /**
@@ -62,7 +72,7 @@ class PermissionRegistrar
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
-    public function getPermissions()
+    protected function getPermissions()
     {
         return $this->cache->rememberForever($this->cacheKey, function () {
             return app(Permission::class)->with('roles')->get();

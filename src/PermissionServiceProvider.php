@@ -10,7 +10,9 @@ use Spatie\Permission\Contracts\Permission as PermissionContract;
 class PermissionServiceProvider extends ServiceProvider
 {
     /**
-     * @param \Spatie\Permission\PermissionRegistrar $permissionLoader
+     * Bootstrap the application services.
+     *
+     * @param PermissionRegistrar $permissionLoader
      */
     public function boot(PermissionRegistrar $permissionLoader)
     {
@@ -26,21 +28,26 @@ class PermissionServiceProvider extends ServiceProvider
             ], 'migrations');
         }
 
+        $this->mergeConfigFrom(
+            __DIR__.'/../resources/config/laravel-permission.php',
+            'laravel-permission'
+        );
         $this->registerModelBindings();
 
         $permissionLoader->registerPermissions();
     }
 
+    /**
+     * Register the application services.
+     */
     public function register()
     {
-        $this->mergeConfigFrom(
-            __DIR__.'/../resources/config/laravel-permission.php',
-            'laravel-permission'
-        );
-
         $this->registerBladeExtensions();
     }
 
+    /**
+     * Bind the Permission and Role model into the IoC.
+     */
     protected function registerModelBindings()
     {
         $config = $this->app->config['laravel-permission.models'];
@@ -49,6 +56,9 @@ class PermissionServiceProvider extends ServiceProvider
         $this->app->bind(RoleContract::class, $config['role']);
     }
 
+    /**
+     * Register the blade extensions.
+     */
     protected function registerBladeExtensions()
     {
         $this->app->afterResolving('blade.compiler', function (BladeCompiler $bladeCompiler) {
